@@ -78,7 +78,7 @@ const DeletarProduto = () => {
   };
 
   return (
-    <div className="w-full md:w-1/2 p-6">
+    <div className="w-full bg-white shadow-md rounded-lg artboard artboard-horizontal">
       <div className="bg-white shadow-md rounded-lg p-6">
         <h2 className="text-2xl font-semibold mb-4 text-gray-800">Deletar Produto</h2>
         <div className="relative">
@@ -87,7 +87,7 @@ const DeletarProduto = () => {
             placeholder="Nome do produto"
             value={nomeBusca}
             onChange={handleInputChange}
-            className="mb-4 p-2 w-full border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-black focus:border-black"
+            className="mb-4 p-2 w-full input input-bordered "
             onFocus={() => setMostrarSugestoes(true)}
             onBlur={() => setTimeout(() => setMostrarSugestoes(false), 200)} 
           />
@@ -110,7 +110,7 @@ const DeletarProduto = () => {
           )}
         </div>
 
-        <button onClick={buscarProduto} className="w-full bg-black text-white font-bold py-2 px-4 rounded-md hover:bg-gray-800 transition duration-300 mb-4">
+        <button onClick={buscarProduto} className="btn bg-indigo-600 px-8 py-3 text-center font-medium text-white hover:bg-indigo-700">
           Buscar
         </button>
 
