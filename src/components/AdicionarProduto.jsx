@@ -10,7 +10,7 @@ const ProdutoSchema = z.object({
 });
 
 const AdicionarProduto = ({ onProdutoAdicionado, setGlobalError }) => {
-  const { setProdutos } = useProdutos();
+  const { produtos, setProdutos } = useProdutos();
   const [novoProduto, setNovoProduto] = useState({ nome: '', preco: '', quantidade: 1 });
   const [errors, setErrors] = useState({});
   const [alertMessage, setAlertMessage] = useState(null);
@@ -29,13 +29,22 @@ const AdicionarProduto = ({ onProdutoAdicionado, setGlobalError }) => {
         quantidade: parseInt(novoProduto.quantidade, 10)
       });
 
-      const { data, error } = await supabase.from('produtos').insert([produtoValidado]);
+      // Adicione o user_id ao produto antes de inserir
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      const { data, error } = await supabase
+        .from('produtos')
+        .insert([{ ...produtoValidado, user_id: user.id }])
+        .select();
 
       if (error) {
         throw error;
       }
 
-      if (Array.isArray(data)) {
+      if (data && data.length > 0) {
         const produtoInserido = data[0];
         setProdutos(prevProdutos => [...prevProdutos, produtoInserido]);
         onProdutoAdicionado(produtoInserido);
@@ -43,12 +52,10 @@ const AdicionarProduto = ({ onProdutoAdicionado, setGlobalError }) => {
 
       setNovoProduto({ nome: '', preco: '', quantidade: 1 });
 
-      // Mostrar alerta de sucesso
       setAlertMessage(`${produtoValidado.quantidade} item(ns) adicionado(s) com sucesso!`);
       setAlertType('success');
       setErrors({});
 
-      // Limpar alerta após 3 segundos
       setTimeout(() => {
         setAlertMessage(null);
         setAlertType(null);
@@ -65,11 +72,9 @@ const AdicionarProduto = ({ onProdutoAdicionado, setGlobalError }) => {
         console.error('Erro ao adicionar produto:', error);
         setGlobalError('Ocorreu um erro inesperado. Tente novamente.');
 
-        // Mostrar alerta de erro
         setAlertMessage('Ocorreu um erro ao adicionar o produto.');
         setAlertType('error');
         
-        // Limpar alerta após 3 segundos
         setTimeout(() => {
           setAlertMessage(null);
           setAlertType(null);
@@ -77,7 +82,6 @@ const AdicionarProduto = ({ onProdutoAdicionado, setGlobalError }) => {
       }
     }
   };
-
   return (
     <div className="bg-white shadow-md p-6 w-full p-4 artboard artboard-horizontal">
       <h2 className="text-2xl font-semibold mb-4 text-gray-800">Adicionar Produto</h2>

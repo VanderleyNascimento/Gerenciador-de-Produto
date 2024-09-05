@@ -1,4 +1,3 @@
-// ProdutoContainer.jsx
 import React, { useState } from 'react';
 import AdicionarProduto from './AdicionarProduto';
 import GerenciadorProdutos from './GerenciadorProdutos';
@@ -10,7 +9,8 @@ const ProdutoContainer = () => {
   const [itemAdicionado, setItemAdicionado] = useState('');
 
   const handleProdutoAdicionado = (novoProduto) => {
-    setProdutos((prevProdutos) => [...prevProdutos, novoProduto]);
+    // Remove this line to prevent duplication
+    // setProdutos((prevProdutos) => [...prevProdutos, novoProduto]);
     setItemAdicionado(novoProduto.nome);
   };
 
@@ -18,9 +18,7 @@ const ProdutoContainer = () => {
     setProdutos((prevProdutos) => prevProdutos.filter(produto => produto.id !== idProduto));
   };
 
-  const limparProdutos = () => {
-    setProdutos([]);
-  };
+
 
   return (
     <div>
@@ -34,4 +32,4 @@ const ProdutoContainer = () => {
   );
 };
 
-export default ProdutoContainer;
+export default ProdutoContainer

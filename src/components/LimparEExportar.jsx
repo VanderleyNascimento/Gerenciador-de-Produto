@@ -7,25 +7,22 @@ import 'jspdf-autotable';
 function LimparEExportar() {
   const { produtos, setProdutos } = useProdutos();
   const [nomeArquivo, setNomeArquivo] = useState('');
-  const [mostrarModal, setMostrarModal] = useState(false);
   const [mostrarAlerta, setMostrarAlerta] = useState(false);
+  const [mostrarModal, setMostrarModal] = useState(false); // Adicionei a definição do estado mostrarModal
 
   const gerarPDF = () => {
     const doc = new jsPDF();
     const dataHora = new Date().toLocaleString();
     const valorTotal = produtos.reduce((total, produto) => total + (parseFloat(produto.preco) * produto.quantidade), 0);
 
-    // Configurações do documento
     doc.setFont("helvetica");
     doc.setFontSize(16);
     doc.text("Lista de Compras", 105, 20, null, null, "center");
 
-    // Informações gerais
     doc.setFontSize(12);
     doc.text(`Data e Hora: ${dataHora}`, 20, 40);
     doc.text(`Valor Total: R$ ${valorTotal.toFixed(2)}`, 20, 50);
 
-    // Tabela de produtos
     let yPos = 70;
     const columns = ["Produto", "Quantidade", "Preço Unitário", "Valor Total"];
     const data = produtos.map(produto => [
@@ -59,31 +56,43 @@ function LimparEExportar() {
       return;
     }
 
-    // Gerar e salvar o PDF
     const doc = gerarPDF();
-    doc.save(`${nomeArquivo}.pdf`);
+    const pdfBlob = doc.output('blob');
 
-    // Limpar o banco de dados usando Supabase
     try {
-      const { error } = await supabase
-        .from('produtos')
-        .delete()
-        .in('id', produtos.map(produto => produto.id));
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado.');
+
+      const { data, error } = await supabase.storage
+        .from('pdf-listas')
+        .upload(`${user.id}/${nomeArquivo}.pdf`, pdfBlob, {
+          cacheControl: '3600',
+          upsert: false,
+        });
 
       if (error) {
         throw error;
       }
 
-      setProdutos([]); // Limpar os produtos no contexto
-      setMostrarAlerta(true); // Mostrar o alerta customizado
-      setTimeout(() => setMostrarAlerta(false), 5000); // Ocultar o alerta após 5 segundos
+      await supabase
+        .from('historico_listas')
+        .insert([{ user_id: user.id, nome: nomeArquivo, pdf_path: data.path }]);
+
+      await supabase
+        .from('produtos')
+        .delete()
+        .in('id', produtos.map(produto => produto.id));
+
+      setProdutos([]);
+      setMostrarAlerta(true);
+      setTimeout(() => setMostrarAlerta(false), 5000);
     } catch (error) {
-      console.error('Erro ao limpar o banco de dados:', error.message);
-      alert('Ocorreu um erro ao limpar o banco de dados.');
+      console.error('Erro ao limpar e exportar:', error.message);
+      alert('Ocorreu um erro ao limpar e exportar a lista.');
     }
 
     setNomeArquivo('');
-    setMostrarModal(false);
+    setMostrarModal(false); // Fechar o modal após a exportação
   };
 
   return (
@@ -94,8 +103,11 @@ function LimparEExportar() {
           <p className="py-6">
             Esta ação irá exportar todos os produtos para um arquivo PDF e depois apagará o banco de dados. Esta ação não pode ser desfeita.
           </p>
-          <button className="btn bg-indigo-600 px-8 py-3 text-center font-medium text-white hover:bg-indigo-700" onClick={() => setMostrarModal(true)}>
-          Exportar e Limpar
+          <button 
+            className="btn bg-indigo-600 px-8 py-3 text-center font-medium text-white hover:bg-indigo-700" 
+            onClick={() => setMostrarModal(true)}
+          >
+            Exportar e Limpar
           </button>
         </div>
       </div>
@@ -135,3 +147,8 @@ function LimparEExportar() {
 }
 
 export default LimparEExportar;
+
+
+
+
+
