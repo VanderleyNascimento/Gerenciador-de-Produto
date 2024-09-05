@@ -8,7 +8,7 @@ function LimparEExportar() {
   const { produtos, setProdutos } = useProdutos();
   const [nomeArquivo, setNomeArquivo] = useState('');
   const [mostrarAlerta, setMostrarAlerta] = useState(false);
-  const [mostrarModal, setMostrarModal] = useState(false); // Adicionei a definição do estado mostrarModal
+  const [mostrarModal, setMostrarModal] = useState(false); 
 
   const gerarPDF = () => {
     const doc = new jsPDF();
@@ -23,19 +23,20 @@ function LimparEExportar() {
     doc.text(`Data e Hora: ${dataHora}`, 20, 40);
     doc.text(`Valor Total: R$ ${valorTotal.toFixed(2)}`, 20, 50);
 
-    let yPos = 70;
-    const columns = ["Produto", "Quantidade", "Preço Unitário", "Valor Total"];
+    const columns = ["Produto", "Quantidade", "Preço Unitário", "Valor Total", "Categoria", "Descrição"];
     const data = produtos.map(produto => [
       produto.nome,
       produto.quantidade.toString(),
       `R$ ${parseFloat(produto.preco).toFixed(2)}`,
-      `R$ ${(parseFloat(produto.preco) * produto.quantidade).toFixed(2)}`
+      `R$ ${(parseFloat(produto.preco) * produto.quantidade).toFixed(2)}`,
+      produto.categoria || "N/A",
+      produto.descricao || "N/A"
     ]);
 
     doc.autoTable({
       head: [columns],
       body: data,
-      startY: yPos,
+      startY: 70,
       theme: 'grid',
       styles: { fontSize: 10 },
       headStyles: { fillColor: [52, 152, 219] },
@@ -92,17 +93,33 @@ function LimparEExportar() {
     }
 
     setNomeArquivo('');
-    setMostrarModal(false); // Fechar o modal após a exportação
+    setMostrarModal(false);
   };
 
   return (
     <div className="hero min-h-screen">
       <div className="hero-content text-center">
         <div className="max-w-md">
-          <h1 className="text-5xl font-bold">Salve esta lista de produtos</h1>
-          <p className="py-6">
-            Esta ação irá exportar todos os produtos para um arquivo PDF e depois apagará o banco de dados. Esta ação não pode ser desfeita.
-          </p>
+          <h1 className="text-5xl font-bold">Lista de Produtos</h1>
+          <p className="py-6">Veja os produtos na lista e exporte-os para um PDF.</p>
+          
+          {produtos.length > 0 ? (
+            <ul>
+              {produtos.map((produto, index) => (
+                <li key={index}>
+                  <strong>Nome:</strong> {produto.nome} <br />
+                  <strong>Quantidade:</strong> {produto.quantidade} <br />
+                  <strong>Preço:</strong> R$ {produto.preco} <br />
+                  <strong>Categoria:</strong> {produto.categoria || "N/A"} <br />
+                  <strong>Descrição:</strong> {produto.descricao || "N/A"} <br />
+                  <strong>Total:</strong> R$ {(produto.preco * produto.quantidade).toFixed(2)} <br /><br />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>Não há produtos na lista.</p>
+          )}
+
           <button 
             className="btn bg-indigo-600 px-8 py-3 text-center font-medium text-white hover:bg-indigo-700" 
             onClick={() => setMostrarModal(true)}

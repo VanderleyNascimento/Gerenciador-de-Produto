@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import supabase from '../components/supabaseClient';
 
 const NavBar = () => {
   const [user, setUser] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,34 +34,86 @@ const NavBar = () => {
     }
   };
 
+  const handleMenuClick = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const closeMenu = () => {
+    setIsOpen(false);
+  };
+
+  const navItems = [
+    { path: '/limpar-e-exportar', label: 'Salvar lista' },
+    { path: '/historico-listas', label: 'Histórico' },
+    { path: '/', label: 'Adicionar produtos' },
+    { path: '/editar-nome', label: 'Editar usuário' },
+  ];
+
   return (
-    <div className="navbar sticky top-0 z-50 bg-primary text-primary-content">
+    <div className="navbar bg-primary text-primary-content shadow-lg">
       <div className="flex-1">
-        <a className="btn btn-ghost">
-          {user ? `Olá,  ${user.user_metadata.nome}! ✌️😊 ` : 'Usuário: Desconhecido'}
+        <a className="btn btn-ghost text-xl font-bold">
+          {user ? `Olá, ${user.user_metadata.nome}! ✌️😊` : 'Bem-vindo!'}
         </a>
       </div>
       <div className="flex-none">
-        <details className="dropdown dropdown-end">
-          <summary className="btn btn-active btn-neutral">Menu</summary>
-          <ul className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow space-y-2">
+        {/* Mobile menu */}
+        <div className="lg:hidden">
+          <button className="btn btn-neutral" onClick={handleMenuClick}>
+            Menu
+          </button>
+          {isOpen && (
+            <div className="dropdown-content menu bg-gray-800 text-white shadow-lg absolute top-16 right-0 mt-2 rounded-box z-50 w-48">
+              {user ? (
+                <>
+                  {navItems.map(({ path, label }) => (
+                    <li key={path} onClick={closeMenu}>
+                      <Link to={path} className="menu-item hover:bg-gray-700">{label}</Link>
+                    </li>
+                  ))}
+                  <li onClick={closeMenu}>
+                    <button onClick={handleLogout} className="btn btn-error w-full">Logout</button>
+                  </li>
+                </>
+              ) : (
+                <li onClick={closeMenu}>
+                  <Link to="/login" className="menu-item hover:bg-gray-700">Login</Link>
+                </li>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Desktop menu */}
+        <div className="hidden lg:flex flex-col lg:flex-row">
+          <ul className="menu menu-horizontal bg-primary text-primary-content">
             {user ? (
               <>
-                <li><Link to="/limpar-e-exportar" className="theme-controller btn btn-sm btn-outline btn-block justify-start">Salvar lista</Link></li>
-                <li><Link to="/historico-listas" className="theme-controller btn btn-sm btn-outline btn-block justify-start">Histórico</Link></li>
-                <li><Link to="/" className="theme-controller btn btn-sm btn-outline btn-block justify-start">Adicionar produtos</Link></li>
-                <li><Link to="/editar-nome" className="theme-controller btn btn-sm btn-outline btn-block justify-start">Editar usuário</Link></li>
-                <li><button onClick={handleLogout} className="theme-controller btn btn-sm btn-error btn-block justify-start">Logout</button></li>
+                {navItems.map(({ path, label }) => (
+                  <li key={path} className={location.pathname === path ? 'btn btn-secudary' : ''}>
+                    <Link to={path} className="px-4 py-2">{label}</Link>
+                  </li>
+                ))}
+                <li>
+                  <button onClick={handleLogout} className="btn btn-error">Logout</button>
+                </li>
               </>
             ) : (
-              <li><Link to="/login" className="theme-controller btn btn-sm btn-outline btn-block justify-start">Login</Link></li>
+              <li>
+                <Link to="/login" className="btn btn-neutral">Login</Link>
+              </li>
             )}
           </ul>
-        </details>
+        </div>
       </div>
     </div>
   );
 };
 
 export default NavBar;
+
+
+
+
+
 

@@ -1,147 +1,155 @@
 import React, { useState } from 'react';
-import { z } from 'zod';
+import { useProdutos } from './ProdutoContext';
 import supabase from './supabaseClient';
-import { useProdutos } from './ProdutoContext.jsx';
 
-const ProdutoSchema = z.object({
-  nome: z.string().min(1, "Nome é obrigatório"),
-  preco: z.number().positive("Preço deve ser positivo"),
-  quantidade: z.number().int().positive("Quantidade deve ser um número inteiro positivo")
-});
-
-const AdicionarProduto = ({ onProdutoAdicionado, setGlobalError }) => {
+function AdicionarProduto() {
   const { produtos, setProdutos } = useProdutos();
-  const [novoProduto, setNovoProduto] = useState({ nome: '', preco: '', quantidade: 1 });
-  const [errors, setErrors] = useState({});
-  const [alertMessage, setAlertMessage] = useState(null);
-  const [alertType, setAlertType] = useState(null);
+  const [nome, setNome] = useState('');
+  const [quantidade, setQuantidade] = useState(1);
+  const [preco, setPreco] = useState('');
+  const [descricao, setDescricao] = useState('');
+  const [categoria, setCategoria] = useState('');
 
-  const handleInputChange = (event) => {
-    const { name, value } = event.target;
-    setNovoProduto((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const adicionarProduto = async () => {
+  const handleAdicionarProduto = async () => {
+    if (!nome || !quantidade || !preco) {
+      alert('Preencha todos os campos obrigatórios!');
+      return;
+    }
+  
+    const novoProduto = {
+      nome,
+      quantidade: parseInt(quantidade),
+      preco: parseFloat(preco),
+      descricao,
+      categoria,
+    };
+  
     try {
-      const produtoValidado = ProdutoSchema.parse({
-        ...novoProduto,
-        preco: parseFloat(novoProduto.preco),
-        quantidade: parseInt(novoProduto.quantidade, 10)
-      });
-
-      // Adicione o user_id ao produto antes de inserir
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('Usuário não autenticado');
-      }
-
+      // Obtém o usuário autenticado
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw new Error('Erro ao obter o usuário: ' + userError.message);
+      if (!user) throw new Error('Usuário não autenticado.');
+  
+      // Inserir o produto e retornar os dados inseridos
       const { data, error } = await supabase
         .from('produtos')
-        .insert([{ ...produtoValidado, user_id: user.id }])
-        .select();
-
-      if (error) {
-        throw error;
+        .insert([{ ...novoProduto, user_id: user.id }])
+        .select();  // Adiciona o .select() para retornar os dados inseridos
+  
+      if (error) throw new Error('Erro ao adicionar produto: ' + error.message);
+  
+      // Verifica se os dados foram retornados corretamente
+      if (!data || data.length === 0) {
+        throw new Error('Nenhum produto foi retornado após a inserção.');
       }
-
-      if (data && data.length > 0) {
-        const produtoInserido = data[0];
-        setProdutos(prevProdutos => [...prevProdutos, produtoInserido]);
-        onProdutoAdicionado(produtoInserido);
-      }
-
-      setNovoProduto({ nome: '', preco: '', quantidade: 1 });
-
-      setAlertMessage(`${produtoValidado.quantidade} item(ns) adicionado(s) com sucesso!`);
-      setAlertType('success');
-      setErrors({});
-
-      setTimeout(() => {
-        setAlertMessage(null);
-        setAlertType(null);
-      }, 3000);
-
+  
+      // Adiciona o produto à lista de produtos localmente
+      setProdutos([...produtos, { ...novoProduto, id: data[0].id }]);
+  
+      // Limpa os campos do formulário
+      setNome('');
+      setQuantidade(1);
+      setPreco('');
+      setDescricao('');
+      setCategoria('');
+  
+      alert('Produto adicionado com sucesso!');
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        const newErrors = {};
-        error.errors.forEach(err => {
-          newErrors[err.path[0]] = err.message;
-        });
-        setErrors(newErrors);
-      } else {
-        console.error('Erro ao adicionar produto:', error);
-        setGlobalError('Ocorreu um erro inesperado. Tente novamente.');
-
-        setAlertMessage('Ocorreu um erro ao adicionar o produto.');
-        setAlertType('error');
-        
-        setTimeout(() => {
-          setAlertMessage(null);
-          setAlertType(null);
-        }, 3000);
-      }
+      console.error('Erro ao adicionar produto:', error.message);
+      alert('Ocorreu um erro ao adicionar o produto: ' + error.message);
     }
   };
+  
+
   return (
-    <div className="bg-white shadow-md p-6 w-full p-4 artboard artboard-horizontal">
-      <h2 className="text-2xl font-semibold mb-4 text-gray-800">Adicionar Produto</h2>
-      <form onSubmit={(e) => { e.preventDefault(); adicionarProduto(); }}>
-        <input
-          type="text"
-          name="nome"
-          value={novoProduto.nome}
-          onChange={handleInputChange}
-          placeholder="Nome do Produto"
-          className={`mb-4 p-2 w-full input input-bordered ${errors.nome ? 'input-error' : ''}`}
-          aria-label="Nome do Produto"
-        />
-        {errors.nome && <p className="text-red-500 text-sm mb-2">{errors.nome}</p>}
-        
-        <input
-          type="number"
-          name="preco"
-          value={novoProduto.preco}
-          onChange={handleInputChange}
-          placeholder="Preço"
-          className={`mb-4 p-2 w-full input input-bordered ${errors.preco ? 'input-error' : ''}`}
-          aria-label="Preço"
-        />
-        {errors.preco && <p className="text-red-500 text-sm mb-2">{errors.preco}</p>}
-        
-        <div className="mb-4 flex items-center">
-          <label htmlFor="quantidade" className="block text-sm font-medium text-gray-700 mr-4">Quantidade:</label>
-          <div className="flex items-center  border-gray-300 rounded">
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={() => setNovoProduto(prev => ({ ...prev, quantidade: Math.max(1, prev.quantidade - 1) }))}
-            >-</button>
+    <div className="hero min-h-screen">
+      <div className="hero-content text-center">
+        <div className="max-w-md">
+          <h1 className="text-5xl font-bold">Adicionar Produto</h1>
+          <p className="py-6">Preencha as informações do novo produto abaixo.</p>
+
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Nome do Produto</span>
+            </label>
+            <input
+              type="text"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              placeholder="Nome do produto"
+              className="input input-bordered w-full max-w-xs"
+              required
+            />
+          </div>
+
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Quantidade</span>
+            </label>
             <input
               type="number"
-              name="quantidade"
-              value={novoProduto.quantidade}
-              onChange={handleInputChange}
-              className="input input-bordered text-center w-16"
-              aria-label="Quantidade"
+              value={quantidade}
+              onChange={(e) => setQuantidade(e.target.value)}
+              min="1"
+              placeholder="Quantidade"
+              className="input input-bordered w-full max-w-xs"
+              required
             />
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={() => setNovoProduto(prev => ({ ...prev, quantidade: prev.quantidade + 1 }))}
-            >+</button>
           </div>
+
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Preço Unitário</span>
+            </label>
+            <input
+              type="number"
+              value={preco}
+              onChange={(e) => setPreco(e.target.value)}
+              min="0"
+              step="0.01"
+              placeholder="Preço (R$)"
+              className="input input-bordered w-full max-w-xs"
+              required
+            />
+          </div>
+
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Descrição (Opcional)</span>
+            </label>
+            <textarea
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+              placeholder="Descrição do produto"
+              className="textarea textarea-bordered w-full max-w-xs"
+            />
+          </div>
+
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Categoria (Opcional)</span>
+            </label>
+            <input
+              type="text"
+              value={categoria}
+              onChange={(e) => setCategoria(e.target.value)}
+              placeholder="Categoria do produto"
+              className="input input-bordered w-full max-w-xs"
+            />
+          </div>
+
+          <button 
+            className="btn bg-indigo-600 px-8 py-3 mt-4 text-center font-medium text-white hover:bg-indigo-700"
+            onClick={handleAdicionarProduto}
+          >
+            Adicionar Produto
+          </button>
         </div>
-        
-        <button type="submit" className="btn bg-indigo-600 px-8 py-3 text-center font-medium text-white hover:bg-indigo-700">Adicionar Produto</button>
-      </form>
-      {alertMessage && (
-        <div className={`alert ${alertType === 'success' ? 'alert-success' : 'alert-error'} mt-4`}>
-          {alertMessage}
-        </div>
-      )}
+      </div>
     </div>
   );
-};
+}
 
 export default AdicionarProduto;
+
 
