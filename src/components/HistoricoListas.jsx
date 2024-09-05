@@ -64,7 +64,7 @@ const HistoricoListas = () => {
   };
 
   return (
-    <div className="hero min-h-screen bg-base-200">
+    <div className="min-h-screen bg-base-200 p-4">
       {alerta.show && (
         <div className="toast toast-top toast-end">
           <div className="alert alert-success">
@@ -72,41 +72,40 @@ const HistoricoListas = () => {
           </div>
         </div>
       )}
-      <div className="hero-content flex-col lg:flex-row">
-        <div className="card w-full max-w-3xl shadow-2xl bg-base-100">
-          <div className="card-body">
-            <h2 className="card-title text-3xl font-bold">Histórico de Listas</h2>
-            {loading ? (
-              <div className="text-center">
-                <span className="loading loading-spinner loading-lg"></span>
-                <p>Carregando histórico...</p>
-              </div>
-            ) : historicoListas.length > 0 ? (
-              <ul>
-                {historicoListas.map((lista, index) => (
-                  <li key={index} className="flex justify-between items-center bg-gray-100 p-4 rounded-lg shadow mb-4">
-                    <div className="flex-grow">
-                      <h3 className="text-xl font-semibold">{lista.nome}</h3>
-                      <p className="text-gray-600">Criado em: {new Date(lista.created_at).toLocaleString()}</p>
-                    </div>
+      <div className="container mx-auto">
+        <h1 className="text-4xl font-bold text-center mb-8">Histórico de Listas</h1>
+        {loading ? (
+          <div className="text-center">
+            <span className="loading loading-spinner loading-lg"></span>
+            <p>Carregando histórico...</p>
+          </div>
+        ) : historicoListas.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {historicoListas.map((lista, index) => (
+              <div key={index} className="card shadow-lg compact bg-base-100">
+                <div className="card-body">
+                  <h2 className="card-title text-2xl font-semibold">{lista.nome}</h2>
+                  <p className="text-gray-500">Criado em: {new Date(lista.created_at).toLocaleString()}</p>
+                  <div className="card-actions justify-end mt-4">
                     <button
                       className="btn btn-primary"
                       onClick={() => baixarLista(lista)}
                     >
-                      Baixar
+                      Baixar PDF
                     </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>{mensagem || 'Não há listas salvas.'}</p>
-            )}
-            {mensagem && <p className="mt-4 text-error">{mensagem}</p>}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
+        ) : (
+          <p className="text-center text-xl">{mensagem || 'Não há listas salvas.'}</p>
+        )}
+        {mensagem && <p className="mt-4 text-error text-center">{mensagem}</p>}
       </div>
     </div>
   );
 };
 
 export default HistoricoListas;
+

@@ -9,6 +9,7 @@ import LimparEExportar from './components/LimparEExportar';
 import Login from './components/Login.jsx';
 import Register from './components/Registration.jsx';
 import PasswordReset from './components/PasswordReset';
+import ChangePassword from './components/ChangePassword'; // Novo componente
 import EditarNomeUsuario from './components/EditarNomeUsuario';
 import HistoricoListas from './components/HistoricoListas';
 import ProtectedRoute from './ProtectedRoute.jsx';
@@ -24,6 +25,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/reset-password" element={<PasswordReset />} />
+            <Route path="/change-password" element={<ChangePassword />} /> {/* Rota protegida */}
 
             {/* Rotas protegidas */}
             <Route path="/" element={
@@ -71,3 +73,4 @@ const NotFound = () => (
 );
 
 export default App;
+
