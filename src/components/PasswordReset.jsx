@@ -9,7 +9,7 @@ const PasswordReset = () => {
     e.preventDefault();
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'http://localhost:3000/update-password',
+        redirectTo: '/change-password',
       });
       if (error) throw error;
       setMessage('Verifique seu email para redefinir sua senha.');
