@@ -1,55 +1,32 @@
 // ProdutoContext.jsx
-import { createContext, useState, useEffect, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import supabase from './supabaseClient';
 
 const ProdutoContext = createContext();
 
 export const ProdutoProvider = ({ children }) => {
   const [produtos, setProdutos] = useState([]);
-  const [globalError, setGlobalError] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [globalError, setGlobalError] = useState('');
 
-  useEffect(() => {
-    const fetchProdutos = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('produtos')
-        .select('*');
-
-      if (error) {
-        console.error('Erro ao buscar produtos:', error);
-        setGlobalError('Ocorreu um erro ao carregar os produtos. Tente novamente mais tarde.');
-      } else {
-        setProdutos(data);
-      }
-      setLoading(false);
-    };
-
-    fetchProdutos();
-  }, []);
-
-  const value = useMemo(() => ({
-    produtos,
-    setProdutos,
-    globalError,
-    setGlobalError,
-    loading
-  }), [produtos, globalError, loading]);
+  const salvarHistoricoLista = async (nomeLista, produtos) => {
+    try {
+      const { error } = await supabase
+        .from('historico_listas')
+        .insert([{ nome: nomeLista, produtos }]);
+      if (error) throw error;
+    } catch (error) {
+      console.error('Erro ao salvar histórico de listas:', error.message);
+    }
+  };
 
   return (
-    <ProdutoContext.Provider value={value}>
+    <ProdutoContext.Provider value={{ produtos, setProdutos, globalError, setGlobalError, salvarHistoricoLista }}>
       {children}
     </ProdutoContext.Provider>
   );
 };
 
-export const useProdutos = () => {
-  const context = useContext(ProdutoContext);
-  if (context === undefined) {
-    throw new Error('useProdutos deve ser usado dentro de um ProdutoProvider');
-  }
-  return context;
-};
+export const useProdutos = () => useContext(ProdutoContext);
 
-export default ProdutoContext;
+
 
